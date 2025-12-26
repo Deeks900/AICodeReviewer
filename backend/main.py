@@ -2,22 +2,18 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from agent import agent   
 
+#This API endpoint extension will be calling
 app = FastAPI()
 
 class ReviewRequest(BaseModel):
     directoryPath: str
     apiKey:str
 
-#Frontend will be talking through this
 @app.post("/review")
 def review_code(req: ReviewRequest):
-    print("This is called")
-    print(req)
     try:
-        print("check")
-        api_key=req.apiKey
-        print(api_key)
-        agent(req.directoryPath, api_key)
+        #Generative AI starting point
+        agent(req.directoryPath, req.apiKey)
         return {
             "status": "success",
             "message": "Code review completed",
@@ -25,3 +21,4 @@ def review_code(req: ReviewRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+        
