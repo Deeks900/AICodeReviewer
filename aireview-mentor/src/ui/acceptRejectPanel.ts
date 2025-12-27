@@ -13,7 +13,7 @@ export function showAcceptRejectPanel(
   const panel = vscode.window.createWebviewPanel(
     'aiReviewActions',
     'AI Review Actions',
-    vscode.ViewColumn.Beside,
+    vscode.ViewColumn.One,
     { enableScripts: true }
   );
 

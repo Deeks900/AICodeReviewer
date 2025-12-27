@@ -20,63 +20,13 @@ def buildConfig(directoryPath):
     Gemini system instruction configuration with full instructions.
     """
     full_instruction = f"""
-You are an expert code reviewer and fixer for any programming language, including HTML, CSS, JavaScript, TypeScript, Python, Java, etc.
-The Directory you have to review is {directoryPath}.
+You are an expert code reviewer. The directory is {directoryPath}.
 
-## 🚫 IMPORTANT: EXCLUDED DIRECTORIES & FILES
-While reviewing the directory, you MUST IGNORE the following folders and files completely. Do NOT list, read, or analyze them:
-- node_modules/
-- __pycache__/
-- .venv/
-- venv/
-- env/
-- .git/
-- .idea/
-- .vscode/
-- dist/
-- build/
-- target/
-- coverage/
-- *.lock
-- *.log
+Use listFiles to get files, readFile to read content, writeFile to fix issues.
 
-⚠️ These directories contain generated or dependency code and reviewing them is a waste of tokens.
+Fix bugs, security, quality issues.
 
-## ✅ RESPONSIBILITIES
-1. Use `listFiles` to retrieve ONLY relevant source code files (.py, .js, .ts, .html, .css, .json, .yaml).
-2. Use `readFile` to read each relevant file.
-3. Analyze and fix issues related to:
-   - Bugs
-   - Security
-   - Code quality
-   - Best practices
-   - Performance
-4. For HTML/Markup: check doctype, meta, semantic HTML, alt tags, accessibility, inline styles.
-5. For CSS: syntax, browser compatibility, inefficient selectors, missing vendor prefixes, unused styles.
-6. For JS/TS/other: null/undefined errors, missing returns, async issues, hardcoded secrets, console.logs, code duplication.
-7. For other languages: syntax errors, best practice violations, security or performance issues.
-8. Use `writeFile` to fix the issues you find.
-9. Collect all issues in JSON array REVIEW_RESULTS.
-10. Return ONLY a single JSON object:
-
-{{
-"summary": {{
-    "total_files_analyzed": "number",
-    "total_issues": "number",
-    "critical": "number",
-    "major": "number",
-    "minor": "number"
-}},
-"issues": [ ... ]
-}}
-
-11. After fixes, generate a **text summary** and save as CODE_REVIEW_SUMMARY.txt in {directoryPath}, with:
-📊 CODE REVIEW COMPLETE
-Total Files Analyzed: X
-Files Fixed: Y
-🔴 SECURITY FIXES: file_name:line – description
-🟠 BUG FIXES: file_name:line – description
-🟡 CODE QUALITY IMPROVEMENTS: file_name:line – description
+Return JSON: {{"summary": {{"total_files_analyzed": number, "total_issues": number, "critical": 0, "major": 0, "minor": 0}}, "issues": [{{"file": path, "line": number, "severity": "MAJOR|MINOR|CRITICAL", "description": "fix description"}}]}}
 """
     return types.GenerateContentConfig(tools=[tools], system_instruction=full_instruction)
 
@@ -108,7 +58,7 @@ def agent(dirPath, apiKey):
         # Initial prompt
         history.append(types.Content(
             role="user",
-            parts=[types.Part(text="Review the code in the given directory and fix all issues.")]
+            parts=[types.Part(text=f"Review the code in the directory {directoryPath} and fix all issues. Start by calling the listFiles function with dirPath='{directoryPath}'.")]
         ))
 
         # -------------------- FUNCTION CALL LOOP --------------------
@@ -134,6 +84,15 @@ def agent(dirPath, apiKey):
                 # Append responses to history
                 history.append(types.Content(role="model", parts=[types.Part(function_call=function_call)]))
                 history.append(types.Content(role="user", parts=[function_response_part]))
+
+                # If listFiles was called, prompt to read each file
+                if function_call.name == "listFiles":
+                    files = toolResponse
+                    for file in files:
+                        history.append(types.Content(
+                            role="user",
+                            parts=[types.Part(text=f"Call readFile for {file}")]
+                        ))
             else:
                 print("No more function calls in response.")
                 break
