@@ -2,27 +2,27 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from agent import agent, explain_code   
 
+#This API endpoint extension will be calling
 app = FastAPI()
 
 class ReviewRequest(BaseModel):
     directoryPath: str
     apiKey:str
 
+<<<<<<< HEAD
+=======
 class ExplainRequest(BaseModel):
     code: str
     language: str
     apiKey: str
 
 #Frontend will be talking through this
+>>>>>>> ai-code-reviewer-fix
 @app.post("/review")
 def review_code(req: ReviewRequest):
-    print("This is called")
-    print(req)
     try:
-        print("check")
-        api_key=req.apiKey
-        print(api_key)
-        agent(req.directoryPath, api_key)
+        #Generative AI starting point
+        agent(req.directoryPath, req.apiKey)
         return {
             "status": "success",
             "message": "Code review completed",
@@ -30,6 +30,9 @@ def review_code(req: ReviewRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+<<<<<<< HEAD
+        
+=======
 
 @app.post("/explain")
 def explain_code_endpoint(req: ExplainRequest):
@@ -38,3 +41,4 @@ def explain_code_endpoint(req: ExplainRequest):
         return {"explanation": explanation}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+>>>>>>> ai-code-reviewer-fix
