@@ -9,15 +9,16 @@ export function applyDiagnostics(
   const map = new Map<string, vscode.Diagnostic[]>();
 
   for (const issue of issues) {
+    if (!issue.file) continue;
     const file = path.join(
       vscode.workspace.workspaceFolders![0].uri.fsPath,
       issue.file
     );
 
     const range = new vscode.Range(
-      issue.line_start - 1,
+      (issue.line || issue.line_start) - 1,
       0,
-      issue.line_end - 1,
+      (issue.line_end || issue.line || issue.line_start) - 1,
       999
     );
 

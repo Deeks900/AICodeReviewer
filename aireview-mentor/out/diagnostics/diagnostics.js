@@ -40,8 +40,10 @@ function applyDiagnostics(collection, issues) {
     collection.clear();
     const map = new Map();
     for (const issue of issues) {
+        if (!issue.file)
+            continue;
         const file = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, issue.file);
-        const range = new vscode.Range(issue.line_start - 1, 0, issue.line_end - 1, 999);
+        const range = new vscode.Range((issue.line || issue.line_start) - 1, 0, (issue.line_end || issue.line || issue.line_start) - 1, 999);
         const severity = issue.severity === 'CRITICAL'
             ? vscode.DiagnosticSeverity.Error
             : issue.severity === 'MAJOR'

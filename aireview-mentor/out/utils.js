@@ -41,6 +41,7 @@ exports.highlightModifiedFiles = highlightModifiedFiles;
 exports.readSummary = readSummary;
 exports.showSummary = showSummary;
 exports.readSummaryJson = readSummaryJson;
+exports.explainCode = explainCode;
 const vscode = __importStar(require("vscode"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
@@ -102,12 +103,18 @@ function captureTimestamps(dir) {
    RUN BACKEND REVIEW
 ---------------------------*/
 async function runReview(directoryPath, apiKey) {
-    // Call your backend API
-    await fetch('http://localhost:8000/review', {
+    const response = await fetch('http://localhost:8000/review', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ directoryPath, apiKey })
     });
+    if (!response.ok) {
+        throw new Error(`Backend review failed: ${response.status} ${response.statusText}`);
+    }
+    const result = await response.json();
+    if (result.status !== 'success') {
+        throw new Error(`Review failed: ${result.message || 'Unknown error'}`);
+    }
 }
 function detectModifiedFiles(before, after) {
     const modified = [];
@@ -170,5 +177,26 @@ function readSummaryJson(dirPath) {
     catch {
         return null;
     }
+}
+/* --------------------------
+   EXPLAIN CODE
+---------------------------*/
+async function explainCode(code, language, apiKey) {
+    const response = await fetch('http://localhost:8000/explain', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            code,
+            language,
+            apiKey,
+        }),
+    });
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data.explanation;
 }
 //# sourceMappingURL=utils.js.map

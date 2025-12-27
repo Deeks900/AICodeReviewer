@@ -36,8 +36,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.showAcceptRejectPanel = showAcceptRejectPanel;
 const vscode = __importStar(require("vscode"));
 const path = __importStar(require("path"));
-function showAcceptRejectPanel(filePath, onAccept, onReject) {
+function showAcceptRejectPanel(filePath, original, modified, issues, onAccept, onReject) {
+    if (!filePath)
+        return;
     const panel = vscode.window.createWebviewPanel('aiReviewActions', 'AI Review Actions', vscode.ViewColumn.Beside, { enableScripts: true });
+    const issuesHtml = issues.map(issue => `
+    <div style="margin-bottom: 12px; padding: 8px; border-left: 3px solid #d29922; background: var(--vscode-input-background);">
+      <strong>Line ${issue.line || issue.line_start}:</strong> ${issue.comment || issue.description}
+    </div>
+  `).join('');
     panel.webview.html = `
 <!DOCTYPE html>
 <html>
@@ -66,9 +73,11 @@ function showAcceptRejectPanel(filePath, onAccept, onReject) {
 <body>
   <h3>AI Review – Proposed Changes</h3>
   <div class="file">${path.basename(filePath)}</div>
-
-  <button class="accept" onclick="accept()">✔ Accept</button>
-  <button class="reject" onclick="reject()">✖ Reject</button>
+  <h4>Issues Found & Fixed:</h4>
+  ${issuesHtml}
+  <h4>Action:</h4>
+  <button class="accept" onclick="accept()">✔ Accept All Fixes</button>
+  <button class="reject" onclick="reject()">✖ Reject All Fixes</button>
 
 <script>
   const vscode = acquireVsCodeApi();
