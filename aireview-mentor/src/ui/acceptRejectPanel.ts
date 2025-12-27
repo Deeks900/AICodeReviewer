@@ -5,6 +5,7 @@ export function showAcceptRejectPanel(
   filePath: string,
   original: string,
   modified: string,
+  issues: any[],
   onAccept: () => void,
   onReject: () => void
 ) {
@@ -15,6 +16,12 @@ export function showAcceptRejectPanel(
     vscode.ViewColumn.Beside,
     { enableScripts: true }
   );
+
+  const issuesHtml = issues.map(issue => `
+    <div style="margin-bottom: 12px; padding: 8px; border-left: 3px solid #d29922; background: var(--vscode-input-background);">
+      <strong>Line ${issue.line || issue.line_start}:</strong> ${issue.comment || issue.description}
+    </div>
+  `).join('');
 
   panel.webview.html = `
 <!DOCTYPE html>
@@ -44,9 +51,11 @@ export function showAcceptRejectPanel(
 <body>
   <h3>AI Review – Proposed Changes</h3>
   <div class="file">${path.basename(filePath)}</div>
-
-  <button class="accept" onclick="accept()">✔ Accept</button>
-  <button class="reject" onclick="reject()">✖ Reject</button>
+  <h4>Issues Found & Fixed:</h4>
+  ${issuesHtml}
+  <h4>Action:</h4>
+  <button class="accept" onclick="accept()">✔ Accept All Fixes</button>
+  <button class="reject" onclick="reject()">✖ Reject All Fixes</button>
 
 <script>
   const vscode = acquireVsCodeApi();

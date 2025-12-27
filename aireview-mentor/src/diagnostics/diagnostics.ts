@@ -16,9 +16,9 @@ export function applyDiagnostics(
     );
 
     const range = new vscode.Range(
-      issue.line_start - 1,
+      (issue.line || issue.line_start) - 1,
       0,
-      issue.line_end - 1,
+      (issue.line_end || issue.line || issue.line_start) - 1,
       999
     );
 

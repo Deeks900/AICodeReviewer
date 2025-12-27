@@ -66,12 +66,20 @@ export function captureTimestamps(dir: string): Map<string, number> {
    RUN BACKEND REVIEW
 ---------------------------*/
 export async function runReview(directoryPath: string, apiKey: string) {
-  // Call your backend API
-  await fetch('http://localhost:8000/review', {
+  const response = await fetch('http://localhost:8000/review', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ directoryPath, apiKey })
   });
+
+  if (!response.ok) {
+    throw new Error(`Backend review failed: ${response.status} ${response.statusText}`);
+  }
+
+  const result = await response.json() as { status: string; message?: string };
+  if (result.status !== 'success') {
+    throw new Error(`Review failed: ${result.message || 'Unknown error'}`);
+  }
 }
 
 export function detectModifiedFiles(
@@ -148,4 +156,28 @@ export function readSummaryJson(dirPath: string): any | null {
     } catch {
         return null;
     }
+}
+
+/* --------------------------
+   EXPLAIN CODE
+---------------------------*/
+export async function explainCode(code: string, language: string, apiKey: string): Promise<string> {
+    const response = await fetch('http://localhost:8000/explain', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            code,
+            language,
+            apiKey,
+        }),
+    });
+
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json() as { explanation: string };
+    return data.explanation;
 }

@@ -209,3 +209,55 @@ def agent(dirPath, apiKey):
 
     except Exception as e:
         print(f"Exception in agent: {e}")
+        REVIEW_RESULTS = {"summary": {"total_files_analyzed": 0, "total_issues": 0, "critical": 0, "major": 0, "minor": 0}, "issues": []}
+
+    # Always write the summary files
+    json_summary_path = Path(directoryPath) / "CODE_REVIEW_SUMMARY.json"
+    with json_summary_path.open("w", encoding="utf-8") as jf:
+        json.dump(REVIEW_RESULTS, jf, indent=2)
+    print(f"JSON summary written: {json_summary_path}")
+
+    # Write text summary
+    text_summary_path = Path(directoryPath) / "CODE_REVIEW_SUMMARY.txt"
+    with text_summary_path.open("w", encoding="utf-8") as tf:
+        summary = REVIEW_RESULTS.get("summary", {})
+        tf.write("📊 CODE REVIEW COMPLETE\n\n")
+        tf.write(f"Total Files Analyzed: {summary.get('total_files_analyzed', 0)}\n")
+        tf.write(f"Files Fixed: {len(REVIEW_RESULTS.get('issues', []))}\n\n")
+
+        tf.write("🔴 SECURITY FIXES:\n")
+        for issue in REVIEW_RESULTS.get("issues", []):
+            if issue.get("severity", "").lower() == "critical":
+                tf.write(f"- {issue['file']}:{issue['line']} – {issue['description']}\n")
+
+        tf.write("\n🟠 BUG FIXES:\n")
+        for issue in REVIEW_RESULTS.get("issues", []):
+            if issue.get("severity", "").lower() == "major":
+                tf.write(f"- {issue['file']}:{issue['line']} – {issue['description']}\n")
+
+        tf.write("\n🟡 CODE QUALITY IMPROVEMENTS:\n")
+        for issue in REVIEW_RESULTS.get("issues", []):
+            if issue.get("severity", "").lower() == "minor":
+                tf.write(f"- {issue['file']}:{issue['line']} – {issue['description']}\n")
+
+    print(f"Text summary written: {text_summary_path}")
+
+# -------------------- EXPLAIN CODE --------------------
+def explain_code(code: str, language: str, api_key: str) -> str:
+    """
+    Use Gemini to explain the provided code snippet.
+    """
+    try:
+        client = genai.Client(api_key=api_key)
+        
+        prompt = f"Explain the following {language} code in simple terms, including what it does, key concepts, and any important notes:\n\n{code}"
+        
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[types.Content(role="user", parts=[types.Part(text=prompt)])]
+        )
+        
+        return response.text.strip()
+    except Exception as e:
+        print(f"Exception in explain_code: {e}")
+        return f"Error explaining code: {str(e)}"

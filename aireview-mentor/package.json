@@ -16,8 +16,45 @@
       {
         "command": "aireview-mentor.review-mentor",
         "title": "AI Review Mentor"
+      },
+      {
+        "command": "aireview-mentor.explainCode",
+        "title": "Explain Code with AI"
+      },
+      {
+        "command": "aireview-mentor.exportReport",
+        "title": "Export Review Report"
       }
-    ]
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "aiReviewIssues",
+          "name": "AI Review Issues",
+          "icon": "$(warning)",
+          "contextualTitle": "AI Review Issues"
+        }
+      ]
+    },
+    "menus": {
+      "editor/context": [
+        {
+          "command": "aireview-mentor.explainCode",
+          "when": "editorHasSelection",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "aireview-mentor.explainCode",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "aireview-mentor.exportReport",
+          "when": "workspaceFolderCount != 0"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
