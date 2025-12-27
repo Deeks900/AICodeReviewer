@@ -18,7 +18,6 @@ tools = types.Tool(function_declarations=[listFilesFunction, readFileFunction])
 # -------------------- CONFIG --------------------
 def buildConfig(directoryPath):
     full_instruction = f"""
-<<<<<<< HEAD
     You are an expert code reviewer and fixer for any programming language, including HTML, CSS, JavaScript, TypeScript, Python, Java, etc.
     The Directory you have to review is {directoryPath}.
 
@@ -80,16 +79,6 @@ def buildConfig(directoryPath):
     ]
     }}
     """
-=======
-You are an expert code reviewer. The directory is {directoryPath}.
-
-Use listFiles to get files, readFile to read content, writeFile to fix issues.
-
-Fix bugs, security, quality issues.
-
-Return JSON: {{"summary": {{"total_files_analyzed": number, "total_issues": number, "critical": 0, "major": 0, "minor": 0}}, "issues": [{{"file": path, "line": number, "severity": "MAJOR|MINOR|CRITICAL", "description": "fix description"}}]}}
-"""
->>>>>>> ai-code-reviewer-fix
     return types.GenerateContentConfig(tools=[tools], system_instruction=full_instruction)
 
 # -------------------- HISTORY & FUNCTION CALL --------------------
@@ -172,16 +161,12 @@ def agent(dirPath, apiKey):
         # Initial prompt
         history.append(types.Content(
             role="user",
-<<<<<<< HEAD
             parts=[types.Part(text="""
             Review the code in the given directory.
             - Fix all issues using function calls if required.
             - When no more fixes are needed, return a FINAL JSON summary
             containing all issues and fixes exactly as instructed in system instructions.
             """)]
-=======
-            parts=[types.Part(text=f"Review the code in the directory {directoryPath} and fix all issues. Start by calling the listFiles function with dirPath='{directoryPath}'.")]
->>>>>>> ai-code-reviewer-fix
         ))
 
         # -------------------- FUNCTION CALL LOOP --------------------
@@ -223,78 +208,6 @@ def agent(dirPath, apiKey):
                 writeTextSummary(reviewJson)
                 break
 
-<<<<<<< HEAD
-=======
-        # -------------------- FINAL JSON SUMMARY --------------------
-        # Ask Gemini explicitly to summarize all issues in JSON format
-        history.append(types.Content(
-            role="user",
-            parts=[types.Part(text="Now, summarize all issues and fixes in a single JSON object exactly as instructed in system instructions.")]
-        ))
-
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=history,
-            config=buildConfig(directoryPath),
-        )
-
-        print("=== Gemini Raw Response ===")
-        print(response.text)
-        print("==========================")
-        # Attempt to parse JSON safely
-        raw_text = response.text.strip()
-        json_text = ""
-
-        # Extract JSON substring if there is extra text
-        start_idx = raw_text.find("{")
-        end_idx = raw_text.rfind("}")
-        if start_idx != -1 and end_idx != -1:
-            json_text = raw_text[start_idx:end_idx+1]
-
-        if json_text:
-            try:
-                data = json.loads(json_text)
-                if isinstance(data, dict):
-                    REVIEW_RESULTS = data
-                elif isinstance(data, list):
-                    REVIEW_RESULTS = {"summary": {}, "issues": data}
-            except Exception as e:
-                print(f"Failed to parse JSON after cleaning: {e}")
-        else:
-            print("No JSON found in Gemini response.")
-
-        # -------------------- WRITE JSON SUMMARY --------------------
-        json_summary_path = Path(directoryPath) / "CODE_REVIEW_SUMMARY.json"
-        with json_summary_path.open("w", encoding="utf-8") as jf:
-            json.dump(REVIEW_RESULTS, jf, indent=2)
-        print(f"JSON summary written: {json_summary_path}")
-
-        # -------------------- WRITE TEXT SUMMARY --------------------
-        text_summary_path = Path(directoryPath) / "CODE_REVIEW_SUMMARY.txt"
-        with text_summary_path.open("w", encoding="utf-8") as tf:
-            summary = REVIEW_RESULTS.get("summary", {})
-            tf.write("📊 CODE REVIEW COMPLETE\n\n")
-            tf.write(f"Total Files Analyzed: {summary.get('total_files_analyzed', 0)}\n")
-            tf.write(f"Files Fixed: {len(REVIEW_RESULTS.get('issues', []))}\n\n")
-
-            tf.write("🔴 SECURITY FIXES:\n")
-            for issue in REVIEW_RESULTS.get("issues", []):
-                if issue.get("severity", "").lower() == "critical":
-                    tf.write(f"- {issue['file']}:{issue['line']} – {issue['description']}\n")
-
-            tf.write("\n🟠 BUG FIXES:\n")
-            for issue in REVIEW_RESULTS.get("issues", []):
-                if issue.get("severity", "").lower() == "major":
-                    tf.write(f"- {issue['file']}:{issue['line']} – {issue['description']}\n")
-
-            tf.write("\n🟡 CODE QUALITY IMPROVEMENTS:\n")
-            for issue in REVIEW_RESULTS.get("issues", []):
-                if issue.get("severity", "").lower() == "minor":
-                    tf.write(f"- {issue['file']}:{issue['line']} – {issue['description']}\n")
-
-        print(f"Text summary written: {text_summary_path}")
-
->>>>>>> ai-code-reviewer-fix
     except Exception as e:
         print(f"Exception in agent: {e}")
         REVIEW_RESULTS = {"summary": {"total_files_analyzed": 0, "total_issues": 0, "critical": 0, "major": 0, "minor": 0}, "issues": []}
