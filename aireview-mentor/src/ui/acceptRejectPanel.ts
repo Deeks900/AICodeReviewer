@@ -3,9 +3,12 @@ import * as path from 'path';
 
 export function showAcceptRejectPanel(
   filePath: string,
+  original: string,
+  modified: string,
   onAccept: () => void,
   onReject: () => void
 ) {
+  if (!filePath) return;
   const panel = vscode.window.createWebviewPanel(
     'aiReviewActions',
     'AI Review Actions',

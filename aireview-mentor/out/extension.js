@@ -101,26 +101,37 @@ function activate(context) {
         const apiKey = await (0, utils_1.getGeminiApiKey)();
         if (!apiKey)
             return;
+        const summaryJsonPath = path.join(root, 'CODE_REVIEW_SUMMARY.json');
+        const alreadyReviewed = fs.existsSync(summaryJsonPath);
         const before = (0, utils_1.captureTimestamps)(root);
         // -------------------- STEP 3: RUN GEMINI --------------------
-        await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: 'AI Reviewing…' }, async () => {
-            await (0, utils_1.runReview)(root, apiKey);
-        });
+        if (!alreadyReviewed) {
+            await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: 'AI Reviewing…' }, async () => {
+                await (0, utils_1.runReview)(root, apiKey);
+            });
+        }
+        else {
+            vscode.window.showInformationMessage('Using existing AI review summary.');
+        }
         // -------------------- STEP 4: POST-PROCESS --------------------
         const after = (0, utils_1.captureTimestamps)(root);
         const modifiedFiles = (0, utils_1.detectModifiedFiles)(before, after);
         (0, utils_1.highlightModifiedFiles)(modifiedFiles);
         // -------------------- STEP 5: READ JSON SUMMARY --------------------
         const summaryJson = (0, utils_1.readSummaryJson)(root);
+        let issueFiles = new Set();
         if (summaryJson && Array.isArray(summaryJson.issues)) {
             (0, diagnostics_1.applyDiagnostics)(diagnostics, summaryJson.issues);
             (0, summaryPanel_1.showSmartSummary)(summaryJson, modifiedFiles);
+            issueFiles = new Set(summaryJson.issues.map((i) => i.file).filter((f) => f));
         }
         else {
             vscode.window.showWarningMessage('AI review summary not found or invalid JSON.');
         }
         // -------------------- STEP 6: DIFF + ACCEPT/REJECT PANEL --------------------
-        for (const file of modifiedFiles) {
+        for (const file of issueFiles) {
+            if (!file)
+                continue;
             const original = originalFileContents.get(file);
             if (!original)
                 continue;
@@ -129,7 +140,7 @@ function activate(context) {
             // Show diff preview (non-blocking)
             await (0, diffPreview_1.showDiffPreview)(file, original, modified);
             // Show Accept/Reject panel
-            (0, acceptRejectPanel_1.showAcceptRejectPanel)(file, () => fs.writeFileSync(file, modified), // Accept
+            (0, acceptRejectPanel_1.showAcceptRejectPanel)(file, original, modified, () => fs.writeFileSync(file, modified), // Accept
             () => fs.writeFileSync(file, original) // Reject
             );
         }

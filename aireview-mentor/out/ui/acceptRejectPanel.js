@@ -36,7 +36,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.showAcceptRejectPanel = showAcceptRejectPanel;
 const vscode = __importStar(require("vscode"));
 const path = __importStar(require("path"));
-function showAcceptRejectPanel(filePath, onAccept, onReject) {
+function showAcceptRejectPanel(filePath, original, modified, onAccept, onReject) {
+    if (!filePath)
+        return;
     const panel = vscode.window.createWebviewPanel('aiReviewActions', 'AI Review Actions', vscode.ViewColumn.Beside, { enableScripts: true });
     panel.webview.html = `
 <!DOCTYPE html>

@@ -96,15 +96,22 @@ export function activate(context: vscode.ExtensionContext) {
       const apiKey = await getGeminiApiKey();
       if (!apiKey) return;
 
+      const summaryJsonPath = path.join(root, 'CODE_REVIEW_SUMMARY.json');
+      const alreadyReviewed = fs.existsSync(summaryJsonPath);
+
       const before = captureTimestamps(root);
 
       // -------------------- STEP 3: RUN GEMINI --------------------
-      await vscode.window.withProgress(
-        { location: vscode.ProgressLocation.Notification, title: 'AI Reviewing…' },
-        async () => {
-          await runReview(root, apiKey);
-        }
-      );
+      if (!alreadyReviewed) {
+        await vscode.window.withProgress(
+          { location: vscode.ProgressLocation.Notification, title: 'AI Reviewing…' },
+          async () => {
+            await runReview(root, apiKey);
+          }
+        );
+      } else {
+        vscode.window.showInformationMessage('Using existing AI review summary.');
+      }
 
       // -------------------- STEP 4: POST-PROCESS --------------------
       const after = captureTimestamps(root);
@@ -113,15 +120,18 @@ export function activate(context: vscode.ExtensionContext) {
 
       // -------------------- STEP 5: READ JSON SUMMARY --------------------
       const summaryJson = readSummaryJson(root);
+      let issueFiles = new Set<string>();
       if (summaryJson && Array.isArray(summaryJson.issues)) {
         applyDiagnostics(diagnostics, summaryJson.issues);
         showSmartSummary(summaryJson, modifiedFiles);
+        issueFiles = new Set(summaryJson.issues.map((i: any) => i.file).filter((f: any) => f));
       } else {
         vscode.window.showWarningMessage('AI review summary not found or invalid JSON.');
       }
 
       // -------------------- STEP 6: DIFF + ACCEPT/REJECT PANEL --------------------
-      for (const file of modifiedFiles) {
+      for (const file of issueFiles) {
+        if (!file) continue;
         const original = originalFileContents.get(file);
         if (!original) continue;
 
@@ -134,6 +144,8 @@ export function activate(context: vscode.ExtensionContext) {
         // Show Accept/Reject panel
         showAcceptRejectPanel(
           file,
+          original,
+          modified,
           () => fs.writeFileSync(file, modified), // Accept
           () => fs.writeFileSync(file, original)  // Reject
         );

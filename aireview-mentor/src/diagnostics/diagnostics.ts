@@ -9,6 +9,7 @@ export function applyDiagnostics(
   const map = new Map<string, vscode.Diagnostic[]>();
 
   for (const issue of issues) {
+    if (!issue.file) continue;
     const file = path.join(
       vscode.workspace.workspaceFolders![0].uri.fsPath,
       issue.file

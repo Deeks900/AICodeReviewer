@@ -55,8 +55,7 @@ While reviewing the directory, you MUST IGNORE the following folders and files c
 5. For CSS: syntax, browser compatibility, inefficient selectors, missing vendor prefixes, unused styles.
 6. For JS/TS/other: null/undefined errors, missing returns, async issues, hardcoded secrets, console.logs, code duplication.
 7. For other languages: syntax errors, best practice violations, security or performance issues.
-8. Do NOT modify files yet. Return structured JSON with:
-   - file, line_start, line_end, severity (CRITICAL|MAJOR|MINOR), category (SECURITY|BUG|QUALITY|PERFORMANCE), comment, suggested_fix.
+8. Use `writeFile` to fix the issues you find.
 9. Collect all issues in JSON array REVIEW_RESULTS.
 10. Return ONLY a single JSON object:
 
@@ -193,18 +192,18 @@ def agent(dirPath, apiKey):
 
             tf.write("🔴 SECURITY FIXES:\n")
             for issue in REVIEW_RESULTS.get("issues", []):
-                if issue.get("category") == "SECURITY":
-                    tf.write(f"- {issue['file']}:{issue['line_start']} – {issue['comment']}\n")
+                if issue.get("severity", "").lower() == "critical":
+                    tf.write(f"- {issue['file']}:{issue['line']} – {issue['description']}\n")
 
             tf.write("\n🟠 BUG FIXES:\n")
             for issue in REVIEW_RESULTS.get("issues", []):
-                if issue.get("category") == "BUG":
-                    tf.write(f"- {issue['file']}:{issue['line_start']} – {issue['comment']}\n")
+                if issue.get("severity", "").lower() == "major":
+                    tf.write(f"- {issue['file']}:{issue['line']} – {issue['description']}\n")
 
             tf.write("\n🟡 CODE QUALITY IMPROVEMENTS:\n")
             for issue in REVIEW_RESULTS.get("issues", []):
-                if issue.get("category") == "QUALITY":
-                    tf.write(f"- {issue['file']}:{issue['line_start']} – {issue['comment']}\n")
+                if issue.get("severity", "").lower() == "minor":
+                    tf.write(f"- {issue['file']}:{issue['line']} – {issue['description']}\n")
 
         print(f"Text summary written: {text_summary_path}")
 
